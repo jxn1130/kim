@@ -1,0 +1,28 @@
+WITH
+    contentmeta AS (
+        SELECT mcode
+        , CASE
+            WHEN mm BETWEEN '01' AND '03' THEN '1'
+            WHEN mm BETWEEN '04' AND '06' THEN '2'
+            WHEN mm BETWEEN '07' AND '09' THEN '3'
+            WHEN mm BETWEEN '10' AND '12' THEN '4'
+            END AS "분기"
+        FROM "text_biz_dw"."e_content_meta" WHERE grade IN (3,4,5,6) and yyyy = '2022'),
+    mediatest AS ( 
+        SELECT mcode, learning_time, userid, item_count, correct_count, score
+        FROM "text_biz_dw"."e_learning_time_proc"
+        JOIN "text_biz_dw"."e_media" AS em USING (userid, mcode)
+        JOIN "text_biz_dw"."e_test" AS et USING (userid, mcode))
+    SELECT mcode
+    , "분기"
+    ,COUNT(DISTINCT userid) AS "총 학생수" 
+    ,ROUND(AVG(e_member.grade),2) AS "수강생 평균 학년" 
+    ,SUM(learning_time) AS "총 학습시간"  
+    ,ROUND(AVG(item_count),2) AS "평가 문항 평균" 
+    ,ROUND(AVG(correct_count),2) AS "정답 문항 평균" 
+    ,ROUND(AVG(score), 2) AS "평균점수" 
+    FROM contentmeta 
+    JOIN mediatest USING(mcode)
+    JOIN "e_member" USING(userid)
+    -- WHERE "분기" = '1' --분기별로 보기
+    GROUP BY mcode, "분기";
